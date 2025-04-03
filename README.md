@@ -98,17 +98,6 @@ d_i, d_o = AAC_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
 Each function returns:
 - `d_i`: Lower boundary diameter [nm]
 - `d_o`: Upper boundary diameter [nm]
-- `d_min`: Array of lower boundary diameters for sweep [nm]
-- `d_max`: Array of upper boundary diameters for sweep [nm]
-- `R_B/R_t/R_m`: Array of corresponding ratio values
-
-## Visualization
-
-All functions include built-in visualization capabilities that show:
-- The operational range of the classifier(s)
-- The input parameters as a green line
-- The boundaries of the operational range
-- Proper labels and legends
 
 ## License
 
