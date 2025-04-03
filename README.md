@@ -1,4 +1,4 @@
-# Aerosol Classifier Operational Range Calculator
+# **A**erosol **C**lassifier **O**perational **R**ange **C**alculator
 
 This Python package provides functions to calculate and visualize the operational ranges of various aerosol classifiers, including:
 
