@@ -1,0 +1,115 @@
+# Aerosol Classifier Operational Range Calculator
+
+This Python package provides functions to calculate and visualize the operational ranges of various aerosol classifiers, including:
+
+- Differential Mobility Analyzer (DMA)
+- Aerosol Centrifuge Classifier (AAC)
+- Centrifugal Particle Mass Analyzer (CPMA)
+- Tandem configurations (CPMA-DMA, CPMA-AAC, AAC-DMA)
+
+## Installation
+
+The package requires the following Python dependencies:
+- numpy
+- scipy
+- matplotlib
+
+You can install these dependencies using pip:
+
+```bash
+pip install numpy scipy matplotlib
+```
+
+## Usage
+
+The package provides several functions to calculate operational ranges for different classifiers:
+
+### Single Classifiers
+
+1. DMA (Differential Mobility Analyzer):
+```python
+from aerosol_classifiers import DMA_Trapezoidal
+
+# Calculate DMA operational range
+d_i, d_o, d_min, d_max, R_B = DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
+```
+
+2. AAC (Aerosol Centrifuge Classifier):
+```python
+from aerosol_classifiers import AAC_Trapezoidal
+
+# Calculate AAC operational range
+d_i, d_o, d_min, d_max, R_t = AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
+```
+
+3. CPMA (Centrifugal Particle Mass Analyzer):
+```python
+from aerosol_classifiers import CPMA_Trapezoidal
+
+# Calculate CPMA operational range
+d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=510, Dm=2.48)
+```
+
+### Tandem Configurations
+
+1. CPMA-DMA:
+```python
+from aerosol_classifiers import CPMA_DMA_Trapezoidal
+
+# Calculate tandem CPMA-DMA operational range
+d_i, d_o = CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3)
+```
+
+2. CPMA-AAC:
+```python
+from aerosol_classifiers import CPMA_AAC_Trapezoidal
+
+# Calculate tandem CPMA-AAC operational range
+d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=9, R_m_inp=30/2.48, rho100=1000, Dm=3)
+```
+
+3. AAC-DMA:
+```python
+from aerosol_classifiers import AAC_DMA_Trapezoidal
+
+# Calculate tandem AAC-DMA operational range
+d_i, d_o = AAC_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
+```
+
+## Parameters
+
+### Common Parameters
+- `Q_a_inp`: Aerosol flow rate in L/min (default: 0.3 L/min)
+- `plot`: Whether to plot the operational range (default: True)
+
+### DMA Parameters
+- `Q_sh_inp`: Sheath flow rate in L/min (default: 3 L/min)
+
+### AAC Parameters
+- `Q_sh_inp`: Sheath flow rate in L/min (default: 3 L/min)
+
+### CPMA Parameters
+- `R_m_inp`: Mass resolution (default: 3)
+- `rho100`: Effective density of particles with a mobility diameter of 100 nm (default: 510)
+- `Dm`: Mass-mobility exponent (default: 2.48)
+
+## Returns
+
+Each function returns:
+- `d_i`: Lower boundary diameter [nm]
+- `d_o`: Upper boundary diameter [nm]
+- `d_min`: Array of lower boundary diameters for sweep [nm]
+- `d_max`: Array of upper boundary diameters for sweep [nm]
+- `R_B/R_t/R_m`: Array of corresponding ratio values
+
+## Visualization
+
+All functions include built-in visualization capabilities that show:
+- The operational range of the classifier(s)
+- The input parameters as a green line
+- The boundaries of the operational range
+- Proper labels and legends
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 
