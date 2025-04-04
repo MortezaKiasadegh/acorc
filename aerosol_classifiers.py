@@ -233,7 +233,7 @@ def AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
             d_max_AAC * 1e9,
             R_t)
 
-def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=510, Dm=2.48, plot=True):
+def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=1000, plot=True):
     """
     Calculates the AAC operational range using the Sheath and aerosol flow rates.
 
@@ -412,7 +412,7 @@ def CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=
     plt.show()
     return d_i, d_o
 
-def CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=9, R_m_inp=30/2.48, rho100=1000, Dm=3):
+def CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3):
     """
     Calculates the tandem CPMA-AAC operational range using the Sheath, aerosol flow rates, mass resolution and mass-mobility relationship.
 
