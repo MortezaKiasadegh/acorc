@@ -233,7 +233,7 @@ def AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
             d_max_AAC * 1e9,
             R_t)
 
-def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=1000, plot=True):
+def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=3, plot=True):
     """
     Calculates the AAC operational range using the Sheath and aerosol flow rates.
 
