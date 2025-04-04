@@ -47,7 +47,7 @@ d_i, d_o, d_min, d_max, R_t = AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
 from aerosol_classifiers import CPMA_Trapezoidal
 
 # Calculate CPMA operational range
-d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=510, Dm=2.48)
+d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=3)
 ```
 
 ### Tandem Configurations
@@ -65,7 +65,7 @@ d_i, d_o = CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=10
 from aerosol_classifiers import CPMA_AAC_Trapezoidal
 
 # Calculate tandem CPMA-AAC operational range
-d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=9, R_m_inp=30/2.48, rho100=1000, Dm=3)
+d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3)
 ```
 
 3. AAC-DMA:
@@ -90,8 +90,8 @@ d_i, d_o = AAC_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3)
 
 ### CPMA Parameters
 - `R_m_inp`: Mass resolution (default: 3)
-- `rho100`: Effective density of particles with a mobility diameter of 100 nm (default: 510)
-- `Dm`: Mass-mobility exponent (default: 2.48)
+- `rho100`: Effective density of particles with a mobility diameter of 100 nm (default: 1000)
+- `Dm`: Mass-mobility exponent (default: 3)
 
 ## Returns
 
