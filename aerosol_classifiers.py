@@ -36,46 +36,105 @@ def Cc(d, P, T):
 
     return Cc
 
-def DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
-    """
-    Calculates the DMA operational range using the Sheath and aerosol flow rates.
+def DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_input = 298.15, P_input = 101325, plot=True):
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    Q_sh_inp : float
-        Sheath flow rate in L/min (default: 3 L/min).
-    plot : bool
-        Whether to plot the operational range (default: True).
+  """
+  Calculates the DMA operational range using the Sheath and aerosol flow rates.
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter for input Q_sh [nm].
-    d_o : float
-        Upper boundary diameter for input Q_sh [nm].
-    d_min_DMA : ndarray
-        Lower boundary diameters for Q_sh sweep [nm].
-    d_max_DMA : ndarray
-        Upper boundary diameters for Q_sh sweep [nm].
-    R_B : ndarray
-        Range of R_B values.
-    """
-    # Constants
-    P = 101325  # The pressure in pa
-    T = 298.15  # The temperature in K
-    mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4)  # viscosity of gas (see Rader (1990))
-    Q_a = Q_a_inp / 60000  # The aerosol flow rate in m^3/s
-    Q_sh = Q_sh_inp / 60000   # The sheath flow rate in m^3/s
-    Q_sh_lb = 2 / 60000  # Lower limit of sheath flow in m^3/s
-    Q_sh_ub = 30 / 60000  # Upper limit of sheath flow in m^3/s
-    r_1 = 9.37e-3  # inner cylinder radius in m
-    r_2 = 19.61e-3  # outer cylinder radius in m
-    L = 0.44369  # length of clasifier in m
-    e = 1.6e-19  # elementary charge in C
-    V_min = 10  # minimum potential difference in v
-    V_max = 10000  # maximum potential difference in v
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  Q_sh_inp : float
+      Sheath flow rate in L/min (default: 3 L/min).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
+  plot : bool
+      Whether to plot the operational range (default: True).
+
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter for input Q_sh [nm].
+  d_o : float
+      Upper boundary diameter for input Q_sh [nm].
+  d_min_DMA : ndarray
+      Lower boundary diameters for Q_sh sweep [nm].
+  d_max_DMA : ndarray
+      Upper boundary diameters for Q_sh sweep [nm].
+  R_B : ndarray
+      Range of R_B values.
+
+
+  """
+  # Constants
+  P = P_input # The pressure in pa
+  T = T_input # The temperature in K
+  mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4) # viscosity of gas (see Rader (1990))
+  Q_a = Q_a_inp / 60000 # The aerosol flow rate in m^3/s
+  Q_sh = Q_sh_inp / 60000   # The sheath flow rate in m^3/s
+  Q_sh_lb = 2 / 60000 # Lower limit of sheath flow in m^3/s
+  Q_sh_ub = 30 / 60000 # Upper limit of sheath flow in m^3/s
+  r_1 = 9.37e-3 # inner cylinder radius in m
+  r_2 = 19.61e-3 # outer cylinder radius in m
+  L = 0.44369 # length of clasifier in m
+  e = 1.6e-19 # elementary charge in C
+  V_min = 10 # minimum potential difference in v
+  V_max = 10000 # maximum potential difference in v
+
+
+  log_r_ratio = np.log(r_2 / r_1)
+  factor1 = (2 * V_min * L * e) / (3 * mu * log_r_ratio)
+  factor2 = (2 * V_max * L * e) / (3 * mu * log_r_ratio)
+
+  # Q_sh_spa = np.linspace(Q_sh_lb, Q_sh_ub, 500)
+  Q_sh_spa = np.logspace(np.log10(Q_sh_lb), np.log10(Q_sh_ub), num=200)
+  R_B = Q_sh_spa / Q_a
+  R_B_lb = Q_sh_lb / Q_a
+  R_B_up = Q_sh_ub / Q_a
+
+  def f(d, Q_sh_val, factor):
+      return d - (factor / Q_sh_val) * Cc(d, P, T)
+
+  d_min_DMA = np.zeros_like(Q_sh_spa)
+  d_max_DMA = np.zeros_like(Q_sh_spa)
+
+  d_i = np.zeros_like(Q_sh_spa)
+  d_o = np.zeros_like(Q_sh_spa)
+
+  # Initial guess
+  initial_guess_l = np.ones_like(Q_sh_spa) * 1e-8
+  initial_guess_h = np.ones_like(Q_sh_spa) * 1e-6
+
+  # Solve for d_min and d_max using fsolve
+  d_min_DMA = fsolve(f, initial_guess_l, args=(Q_sh_spa, factor1))
+  d_max_DMA = fsolve(f, initial_guess_h, args=(Q_sh_spa, factor2))
+
+  d_i = fsolve(f, initial_guess_l[0], args=(Q_sh, factor1))[0]
+  d_o = fsolve(f, initial_guess_h[0], args=(Q_sh, factor2))[0]
+
+
+  if plot:
+    plt.figure(figsize=(8, 6))
+    plt.loglog([d_min_DMA[0] * 1e9, d_max_DMA[0] * 1e9], [R_B_lb, R_B_lb], color='red')
+    plt.loglog([d_min_DMA[-1] * 1e9, d_max_DMA[-1] * 1e9], [R_B_up, R_B_up], color='red')
+    plt.loglog(d_min_DMA * 1e9, R_B, color='red')
+    plt.loglog(d_max_DMA * 1e9, R_B, color='red', label='DMA operational range')
+    plt.loglog([d_i * 1e9, d_o * 1e9], [Q_sh / Q_a, Q_sh / Q_a], color='green', label=r'Input $Q_{sh}$ boundary')
+    plt.legend()
+    plt.grid(True, which="both", ls="--")
+    plt.xlabel(r'Mobility diameter, $D_{\mathrm{m}}$ [nm]')
+    plt.ylabel(r'$R_{\tau}$')
+    plt.title('DMA Operational Range')
+    plt.show()
+
+  return (d_i * 1e9, d_o * 1e9,
+          d_min_DMA * 1e9,
+          d_max_DMA * 1e9,
+          R_B)
+
 
     log_r_ratio = np.log(r_2 / r_1)
     factor1 = (2 * V_min * L * e) / (3 * mu * log_r_ratio)
@@ -125,36 +184,42 @@ def DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
             d_max_DMA * 1e9,
             R_B)
 
-def AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
-    """
-    Calculates the AAC operational range using the Sheath and aerosol flow rates.
+def AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_input = 298.15, P_input = 101325, plot=True):
+  """
+  Calculates the AAC operational range using the Sheath and aerosol flow rates.
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    Q_sh_inp : float
-        Sheath flow rate in L/min (default: 3 L/min).
-    plot : bool
-        Whether to plot the operational range (default: True).
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  Q_sh_inp : float
+      Sheath flow rate in L/min (default: 3 L/min).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
+  plot : bool
+      Whether to plot the operational range (default: True).
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter for input Q_sh [nm].
-    d_o : float
-        Upper boundary diameter for input Q_sh [nm].
-    d_min_AAC : ndarray
-        Lower boundary diameters for Q_sh sweep [nm].
-    d_max_AAC : ndarray
-        Upper boundary diameters for Q_sh sweep [nm].
-    R_t : ndarray
-        Range of R_t values.
-    """
-    # Gas properties
-    P = 101325  # The pressure in pa
-    T = 298.15  # The temperature in K
-    mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4)  # viscosity of gas (see Rader (1990))
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter for input Q_sh [nm].
+  d_o : float
+      Upper boundary diameter for input Q_sh [nm].
+  d_min_AAC : ndarray
+      Lower boundary diameters for Q_sh sweep [nm].
+  d_max_AAC : ndarray
+      Upper boundary diameters for Q_sh sweep [nm].
+  R_t : ndarray
+      Range of R_t values.
+
+
+  """
+  # Gas properties
+  P = P_input # The pressure in pa
+  T = T_input # The temperature in K
+  mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4) # viscosity of gas (see Rader (1990))
 
     # Flow rates
     Q_a = Q_a_inp / 60000  # The aerosol flow rate in m^3/s
@@ -233,36 +298,48 @@ def AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, plot=True):
             d_max_AAC * 1e9,
             R_t)
 
-def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=3, plot=True):
-    """
-    Calculates the AAC operational range using the Sheath and aerosol flow rates.
+def CPMA_Trapezoidal(Q_a_inp = 0.3, R_m_inp = 3, rho100 = 1000, Dm = 3, T_input = 298.15, P_input = 101325, plot=True):
+  """
+  Calculates the AAC operational range using the Sheath and aerosol flow rates.
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    R_m_inp : float
-        Mass resolution (default: 5).
-    plot : bool
-        Whether to plot the operational range (default: True).
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  R_m_inp : float
+      Mass resolution (default: 5).
+  rho100 : float
+      Effective density of particles with a mobility diameter of 100 nm (default: 1000).
+  Dm : float
+      Mass-mobility exponent (default: 3).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
+  plot : bool
+      Whether to plot the operational range (default: True).
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter for input R_m [nm].
-    d_o : float
-        Upper boundary diameter for input R_m [nm].
-    d_min_CPMA : ndarray
-        Lower boundary diameters for R_m sweep [nm].
-    d_max_CPMA : ndarray
-        Upper boundary diameters for R_m sweep [nm].
-    R_m_spa : ndarray
-        Range of R_m values.
-    """
-    # Gas properties
-    P = 101325  # Pa
-    T = 298.15  # K
-    mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4)
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter for input R_m [nm].
+  d_o : float
+      Upper boundary diameter for input R_m [nm].
+  d_min_CPMA : ndarray
+      Lower boundary diameters for R_m sweep [nm].
+  d_max_CPMA : ndarray
+      Upper boundary diameters for R_m sweep [nm].
+  R_m_spa : ndarray
+      Range of R_m values.
+
+
+  """
+
+
+  # Gas properties
+  P = P_input # The pressure in pa
+  T = T_input # The temperature in K
+  mu = 1.81809e-5 * (T / 293.15) ** 1.5 * (293.15 + 110.4) / (T + 110.4)
 
     # Flow rates
     Q_a = Q_a_inp / 60000  # m^3/s
@@ -355,33 +432,40 @@ def CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=3, plot=True):
             d_max_CPMA[valid_indices] * 1e9,
             R_m_spa[valid_indices])
 
-def CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3):
-    """
-    Calculates the tandem CPMA-DMA operational range using the Sheath, aerosol flow rates, mass resolution and mass-mobility relationship.
+def CPMA_DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, R_m_inp = 10/3, rho100 = 1000, Dm = 3, T_input = 298.15, P_input = 101325):
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    Q_sh_inp : float
-        Sheath flow rate in L/min (default: 3 L/min).
-    R_m_inp : float
-        Mass resolution (default: 10/3).
-    rho100 : float
-        Effective density of particles with a mobility diameter of 100 nm (default: 1000).
-    Dm : float
-        Mass-mobility exponent (default: 3).
+  """
+  Calculates the tandem CPMA-DMA operational range using the Sheath, aerosol flow rates, mass resolution and mass-mobility relationship.
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter.
-    d_o : float
-        Upper boundary diameter.
-    """
-    d_i_DMA, d_o_DMA, d_min_DMA, d_max_DMA, R_B = DMA_Trapezoidal(Q_a_inp, Q_sh_inp, False)
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  Q_sh_inp : float
+      Sheath flow rate in L/min (default: 3 L/min).
+  R_m_inp : float
+      Mass resolution (default: 10/3).
+  rho100 : float
+      Effective density of particles with a mobility diameter of 100 nm (default: 1000).
+  Dm : float
+      Mass-mobility exponent (default: 3).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
 
-    d_i_CPMA, d_o_CPMA, d_min_CPMA, d_max_CPMA, R_m = CPMA_Trapezoidal(Q_a_inp, R_m_inp, rho100, Dm, False)
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter.
+  d_o : float
+      Upper boundary diameter.
+
+  """
+
+  d_i_DMA, d_o_DMA, d_min_DMA, d_max_DMA, R_B = DMA_Trapezoidal(Q_a_inp, Q_sh_inp, T_input, P_input, False)
+
+  d_i_CPMA, d_o_CPMA, d_min_CPMA, d_max_CPMA, R_m = CPMA_Trapezoidal(Q_a_inp, R_m_inp, rho100, Dm, T_input, P_input, False)
 
     d_i = max(d_i_DMA, d_i_CPMA)
     d_o = min(d_o_DMA, d_o_CPMA)
@@ -412,33 +496,40 @@ def CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=
     plt.show()
     return d_i, d_o
 
-def CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3):
-    """
-    Calculates the tandem CPMA-AAC operational range using the Sheath, aerosol flow rates, mass resolution and mass-mobility relationship.
+def CPMA_AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 9, R_m_inp = 30/2.48, rho100 = 1000, Dm = 3, T_input = 298.15, P_input = 101325):
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    Q_sh_inp : float
-        Sheath flow rate in L/min (default: 3 L/min).
-    R_m_inp : float
-        Mass resolution (default: 10/3).
-    rho100 : float
-        Effective density of particles with a mobility diameter of 100 nm (default: 1000).
-    Dm : float
-        Mass-mobility exponent (default: 3).
+  """
+  Calculates the tandem CPMA-AAC operational range using the Sheath, aerosol flow rates, mass resolution and mass-mobility relationship.
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter.
-    d_o : float
-        Upper boundary diameter.
-    """
-    d_i_AAC, d_o_AAC, d_min_AAC, d_max_AAC, R_t = AAC_Trapezoidal(Q_a_inp, Q_sh_inp, False)
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  Q_sh_inp : float
+      Sheath flow rate in L/min (default: 3 L/min).
+  R_m_inp : float
+      Mass resolution (default: 10/3).
+  rho100 : float
+      Effective density of particles with a mobility diameter of 100 nm (default: 1000).
+  Dm : float
+      Mass-mobility exponent (default: 3).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
 
-    d_i_CPMA, d_o_CPMA, d_min_CPMA, d_max_CPMA, R_m = CPMA_Trapezoidal(Q_a_inp, R_m_inp, rho100, Dm, False)
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter.
+  d_o : float
+      Upper boundary diameter.
+
+  """
+
+  d_i_AAC, d_o_AAC, d_min_AAC, d_max_AAC, R_t = AAC_Trapezoidal(Q_a_inp, Q_sh_inp, T_input, P_input, False)
+
+  d_i_CPMA, d_o_CPMA, d_min_CPMA, d_max_CPMA, R_m = CPMA_Trapezoidal(Q_a_inp, R_m_inp, rho100, Dm, T_input, P_input, False)
 
     d_i = max(d_i_AAC, d_i_CPMA)
     d_o = min(d_o_AAC, d_o_CPMA)
@@ -469,27 +560,34 @@ def CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=
     plt.show()
     return d_i, d_o
 
-def AAC_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3):
-    """
-    Calculates the tandem AAC-DMA operational range using the Sheath, aerosol flow rates.
+def AAC_DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_input = 298.15, P_input = 101325):
 
-    Parameters
-    ----------
-    Q_a_inp : float
-        Aerosol flow rate in L/min (default: 0.3 L/min).
-    Q_sh_inp : float
-        Sheath flow rate in L/min (default: 3 L/min).
+  """
+  Calculates the tandem AAC-DMA operational range using the Sheath, aerosol flow rates.
 
-    Returns
-    -------
-    d_i : float
-        Lower boundary diameter.
-    d_o : float
-        Upper boundary diameter.
-    """
-    d_i_AAC, d_o_AAC, d_min_AAC, d_max_AAC, R_t = AAC_Trapezoidal(Q_a_inp, Q_sh_inp, False)
+  Parameters
+  ----------
+  Q_a_inp : float
+      Aerosol flow rate in L/min (default: 0.3 L/min).
+  Q_sh_inp : float
+      Sheath flow rate in L/min (default: 3 L/min).
+  P : float
+    Pressure in Pa (default: 101325 Pa).
+  T : float
+    Temperature in K (default: 298.15 K).
 
-    d_i_DMA, d_o_DMA, d_min_DMA, d_max_DMA, R_B = DMA_Trapezoidal(Q_a_inp, Q_sh_inp, False)
+  Returns
+  -------
+  d_i : float
+      Lower boundary diameter.
+  d_o : float
+      Upper boundary diameter.
+
+  """
+
+  d_i_AAC, d_o_AAC, d_min_AAC, d_max_AAC, R_t = AAC_Trapezoidal(Q_a_inp, Q_sh_inp, T_input, P_input, False)
+
+  d_i_DMA, d_o_DMA, d_min_DMA, d_max_DMA, R_B = DMA_Trapezoidal(Q_a_inp, Q_sh_inp, T_input, P_input, False)
 
     d_i = max(d_i_DMA, d_i_AAC)
     d_o = min(d_o_DMA, d_o_AAC)
