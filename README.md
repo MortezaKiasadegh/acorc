@@ -31,7 +31,7 @@ The package provides several functions to calculate operational ranges for diffe
 from aerosol_classifiers import DMA_Trapezoidal
 
 # Calculate DMA operational range
-d_i, d_o, d_min, d_max, R_B = DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_inp = 298.15, P_inp = 101325)
+d_i, d_o, d_min, d_max, R_B = DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, T_inp=298.15, P_inp=101325)
 ```
 
 2. AAC (Aerosol Centrifuge Classifier):
@@ -39,7 +39,7 @@ d_i, d_o, d_min, d_max, R_B = DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_inp
 from aerosol_classifiers import AAC_Trapezoidal
 
 # Calculate AAC operational range
-d_i, d_o, d_min, d_max, R_t = AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_inp = 298.15, P_inp = 101325)
+d_i, d_o, d_min, d_max, R_t = AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, T_inp=298.15, P_inp=101325)
 ```
 
 3. CPMA (Centrifugal Particle Mass Analyzer):
@@ -47,7 +47,7 @@ d_i, d_o, d_min, d_max, R_t = AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_inp
 from aerosol_classifiers import CPMA_Trapezoidal
 
 # Calculate CPMA operational range
-d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp = 0.3, R_m_inp = 3, rho100 = 1000, Dm = 3, T_inp = 298.15, P_inp = 101325)
+d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp=0.3, R_m_inp=3, rho100=1000, Dm=3, T_inp=298.15, P_inp=101325)
 ```
 
 ### Tandem Configurations
@@ -57,7 +57,7 @@ d_i, d_o, d_min, d_max, R_m = CPMA_Trapezoidal(Q_a_inp = 0.3, R_m_inp = 3, rho10
 from aerosol_classifiers import CPMA_DMA_Trapezoidal
 
 # Calculate tandem CPMA-DMA operational range
-d_i, d_o = CPMA_DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, R_m_inp = 10/3, rho100 = 1000, Dm = 3, T_inp = 298.15, P_inp = 101325)
+d_i, d_o = CPMA_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, R_m_inp=10/3, rho100=1000, Dm=3, T_inp=298.15, P_inp=101325)
 ```
 
 2. CPMA-AAC:
@@ -65,7 +65,7 @@ d_i, d_o = CPMA_DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, R_m_inp = 10/3, rho
 from aerosol_classifiers import CPMA_AAC_Trapezoidal
 
 # Calculate tandem CPMA-AAC operational range
-d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 9, R_m_inp = 30/2.48, rho100 = 510, Dm = 2.48, T_inp = 298.15, P_inp = 101325)
+d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=9, R_m_inp=30/2.48, rho100=510, Dm=2.48, T_inp=298.15, P_inp=101325)
 ```
 
 3. AAC-DMA:
@@ -73,7 +73,7 @@ d_i, d_o = CPMA_AAC_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 9, R_m_inp = 30/2.48, 
 from aerosol_classifiers import AAC_DMA_Trapezoidal
 
 # Calculate tandem AAC-DMA operational range
-d_i, d_o = AAC_DMA_Trapezoidal(Q_a_inp = 0.3, Q_sh_inp = 3, T_inp = 298.15, P_inp = 101325)
+d_i, d_o = AAC_DMA_Trapezoidal(Q_a_inp=0.3, Q_sh_inp=3, T_inp=298.15, P_inp=101325)
 ```
 
 ## Parameters
