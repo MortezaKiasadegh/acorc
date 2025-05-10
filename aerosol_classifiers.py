@@ -368,32 +368,29 @@ def CPMA_Trapezoidal(Q_a_inp = 0.3, R_m_inp = 3, rho100 = 1000, Dm = 3, T_input 
     factor3 = 3 * mu * Q_a / (2 * k * r_c**2 * L)
 
     # Generic residual function
-    def residual(d, R_m_val, factor_v, is_min, is_first):
+    def residual(d, R_m_val, factor_v):
         d = np.atleast_1d(d)[0]
         d_m_max = np.pow(((R_m_val + 1) / R_m_val), (1 / D_m)) * d
         factor = factor1 if factor_v == 'min' else factor2
 
         w_guess = (factor / np.pow(d, D_m))**0.5
-        if is_first:
-            w = np.clip(w_guess, w_lb_i, w_ub_i) if is_min else np.clip(w_guess, w_lb_i, w_ub_i)
-        else:
-            w = np.clip(w_guess, w_lb_i, w_ub_i)
+        w = np.clip(w_guess, w_lb_i, w_ub_i)
 
         res = np.pow(d, D_m) - np.pow(d_m_max, D_m) + (factor3 / w**2) * (d_m_max / Cc(d_m_max, P, T))
         return res / np.abs(np.pow(d, D_m))
 
     # Solve d_i and d_o for the input R_m
-    def optimize_diameter(R_m_val, factor_v, is_min, is_first, guess):
+    def optimize_diameter(R_m_val, factor_v, guess):
         return least_squares(
             residual, guess, bounds=(1e-9, 5e-6),
-            args=(R_m_val, factor_v, is_min, is_first)
+            args=(R_m_val, factor_v)
         ).x[0]
 
     # Single point (input R_m)
-    d_i_1 = optimize_diameter(R_m_inp, 'min', True, True, 1.5e-8)
-    d_o_1 = optimize_diameter(R_m_inp, 'min', False, True, 1.5e-6)
-    d_i_2 = optimize_diameter(R_m_inp, 'max', True, False, 1.5e-8)
-    d_o_2 = optimize_diameter(R_m_inp, 'max', False, False, 1.5e-6)
+    d_i_1 = optimize_diameter(R_m_inp, 'min', 1.5e-8)
+    d_o_1 = optimize_diameter(R_m_inp, 'min', 1.5e-6)
+    d_i_2 = optimize_diameter(R_m_inp, 'max', 1.5e-8)
+    d_o_2 = optimize_diameter(R_m_inp, 'max', 1.5e-6)
 
     d_i = max(d_i_1, d_i_2)
     d_o = min(d_o_1, d_o_2)
@@ -404,10 +401,10 @@ def CPMA_Trapezoidal(Q_a_inp = 0.3, R_m_inp = 3, rho100 = 1000, Dm = 3, T_input 
 
     # Loop over R_m_spa with vectorized initial guesses (optional)
     for idx, R_m_val in enumerate(R_m_spa):
-        d_min_1[idx] = optimize_diameter(R_m_val, 'min', True, True, 1.5e-8)
-        d_max_1[idx] = optimize_diameter(R_m_val, 'min', False, True, 1.5e-6)
-        d_min_2[idx] = optimize_diameter(R_m_val, 'max', True, False, 1.5e-8)
-        d_max_2[idx] = optimize_diameter(R_m_val, 'max', False, False, 1.5e-6)
+        d_min_1[idx] = optimize_diameter(R_m_val, 'min', 1.5e-8)
+        d_max_1[idx] = optimize_diameter(R_m_val, 'min', 1.5e-6)
+        d_min_2[idx] = optimize_diameter(R_m_val, 'max', 1.5e-8)
+        d_max_2[idx] = optimize_diameter(R_m_val, 'max', 1.5e-6)
 
     # Combine results
     d_min_CPMA = np.maximum(d_min_1, d_min_2)
