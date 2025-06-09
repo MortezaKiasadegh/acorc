@@ -1,5 +1,7 @@
 # **A**erosol **C**lassifier **O**perational **R**ange **C**alculator
 
+**Available languages:** *Python*, *Javscript*
+
 This Python package provides functions to calculate and visualize the operational ranges of various aerosol classifiers, including:
 
 - Differential Mobility Analyzer (DMA)
