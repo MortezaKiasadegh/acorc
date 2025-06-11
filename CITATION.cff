@@ -1,0 +1,12 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Kiasadegh
+  given-names: Morteza
+orcid: https://orcid.org/0009-0007-9691-602X
+title:ACORC: Aerosol Classifier Operational Range Calculator (DMA, AAC, CPMA)
+publisher: Zenodo
+doi: 10.5281/zenodo.15620940
+url: https://MortezaKiasadegh.github.io/acorc
+version: v1.0
+date-released: 2025-06-09
