@@ -22,71 +22,60 @@
         <h1>DMA Range Calculator</h1>
         <div class="input-section">
             <div class="control">
-                <span class="control-label">Aerosol Flow Rate</span>
-                <span class="control-unit">(L/min)</span><br>
+                <span class="control-label">Aerosol Flow Rate (L/min)</span>
                 <input class="textinput" id="DMA_Q_a" type="number" value="0.3" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Sheath Flow Rate</span>
-                <span class="control-unit">(L/min)</span><br>
+                <span class="control-label">Sheath Flow Rate (L/min)</span>
                 <input class="textinput" id="DMA_Q_sh" type="number" value="3" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Lower Sheath Flow Rate Limit</span>
-                <span class="control-unit">(L/min)</span><br>
+                <span class="control-label">Lower Sheath Flow Limit (L/min)</span>
                 <input class="textinput" id="DMA_Q_sh_lb" type="number" value="2" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Upper Sheath Flow Rate Limit</span>
-                <span class="control-unit">(L/min)</span><br>
+                <span class="control-label">Upper Sheath Flow Limit (L/min)</span>
                 <input class="textinput" id="DMA_Q_sh_ub" type="number" value="30" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Inner Cylinder Radius</span>
-                <span class="control-unit">(m)</span><br>
+                <span class="control-label">Inner Cylinder Radius (m)</span>
                 <input class="textinput" id="DMA_r_1" type="number" value="0.00937" step="0.001">
             </div>
             <div class="control">
-                <span class="control-label">Outer Cylinder Radius</span>
-                <span class="control-unit">(m)</span><br>
+                <span class="control-label">Outer Cylinder Radius (m)</span>
                 <input class="textinput" id="DMA_r_2" type="number" value="0.01961" step="0.001">
             </div>
             <div class="control">
-                <span class="control-label">Length of Classifier</span>
-                <span class="control-unit">(m)</span><br>
+                <span class="control-label">Length of Classifier (m)</span>
                 <input class="textinput" id="DMA_L" type="number" value="0.44369" step="0.01">
             </div>
             <div class="control">
-                <span class="control-label">Lower Voltage Limit</span>
-                <span class="control-unit">(V)</span><br>
+                <span class="control-label">Lower Voltage Limit (V)</span>
                 <input class="textinput" id="DMA_V_min" type="number" value="10" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Upper Voltage Limit</span>
-                <span class="control-unit">(V)</span><br>
+                <span class="control-label">Upper Voltage Limit (V)</span>
                 <input class="textinput" id="DMA_V_max" type="number" value="10000" step="1">
             </div>
             <div class="control">
-                <span class="control-label">Temperature</span>
-                <span class="control-unit">(K)</span><br>
+                <span class="control-label">Temperature (K)</span>
                 <input class="textinput" id="DMA_T" type="number" value="298.15" step="0.1">
             </div>
             <div class="control">
-                <span class="control-label">Pressure</span>
-                <span class="control-unit">(Pa)</span><br>
+                <span class="control-label">Pressure (Pa)</span>
                 <input class="textinput" id="DMA_P" type="number" value="101325" step="1">
             </div>
             <!-- Classifier model selector -->
             <div class="control" id="select-div">
-                <span class="control-label">Electrostatic Model</span><br>
+                <span class="control-label">Electrostatic Model</span>
                 <select class="textinput" id="Electrostatic-model">
                     <option value="non">None</option>
                     <option value="3080">3080</option>
                     <option value="3082">3082</option>
-                </select><br>
+                </select>
             </div>
             <div class="control" id="select-div">
-                <span class="control-label">DMA Model</span><br>
+                <span class="control-label">DMA Model</span>
                 <select class="textinput" id="DMA-model">
                     <option value="non">None</option>
                     <option value="3081-long">3081 Long</option>
@@ -95,7 +84,7 @@
                     <option value="3085-nano-dual">3085 Nano-Dual Blower</option>
                     <option value="3085A-nano">3085A Nano</option>
                     <option value="3086-1nm">3086 1 nm</option>
-                </select><br>
+                </select>
             </div>
             <button onclick="calculateDMARange()">Calculate</button>
         </div>
@@ -105,63 +94,51 @@
             <h1>AAC Range Calculator</h1>
             <div class="input-section">
                 <div class="control">
-                    <span class="control-label">Aerosol Flow Rate</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Aerosol Flow Rate (L/min)</span>
                     <input class="textinput" id="AAC_Q_a" type="number" value="0.3" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Sheath Flow Rate</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Sheath Flow Rate (L/min)</span>
                     <input class="textinput" id="AAC_Q_sh" type="number" value="3" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Lower Sheath Flow Limit</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Lower Sheath Flow Limit (L/min)</span>
                     <input class="textinput" id="AAC_Q_sh_lb" type="number" value="2" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Upper Sheath Flow Limit</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Upper Sheath Flow Limit (L/min)</span>
                     <input class="textinput" id="AAC_Q_sh_ub" type="number" value="15" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Rayleigh-Bénard Sheath Flow</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Rayleigh-Bénard Flow (L/min)</span>
                     <input class="textinput" id="AAC_Q_sh_RB" type="number" value="10" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Inner Cylinder Radius</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Inner Cylinder Radius (m)</span>
                     <input class="textinput" id="AAC_r_1" type="number" value="0.056" step="0.001">
                 </div>
                 <div class="control">
-                    <span class="control-label">Outer Cylinder Radius</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Outer Cylinder Radius (m)</span>
                     <input class="textinput" id="AAC_r_2" type="number" value="0.06" step="0.001">
                 </div>
                 <div class="control">
-                    <span class="control-label">Length of Classifier</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Length of Classifier (m)</span>
                     <input class="textinput" id="AAC_L" type="number" value="0.206" step="0.01">
                 </div>
                 <div class="control">
-                    <span class="control-label">Lower Rotational Speed</span>
-                    <span class="control-unit">(rad/s)</span><br>
+                    <span class="control-label">Lower Rotational Speed (rad/s)</span>
                     <input class="textinput" id="AAC_w_lb" type="number" value="200" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Upper Rotational Speed</span>
-                    <span class="control-unit">(rad/s)</span><br>
+                    <span class="control-label">Upper Rotational Speed (rad/s)</span>
                     <input class="textinput" id="AAC_w_ub" type="number" value="7000" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Temperature</span>
-                    <span class="control-unit">(K)</span><br>
+                    <span class="control-label">Temperature (K)</span>
                     <input class="textinput" id="AAC_T" type="number" value="298.15" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Pressure</span>
-                    <span class="control-unit">(Pa)</span><br>
+                    <span class="control-label">Pressure (Pa)</span>
                     <input class="textinput" id="AAC_P" type="number" value="101325" step="1">
                 </div>
                 <button onclick="calculateAACRange()">Calculate</button>
@@ -173,89 +150,119 @@
             <h1>CPMA Range Calculator</h1>
             <div class="input-section">
                 <div class="control">
-                    <span class="control-label">Aerosol Flow Rate</span>
-                    <span class="control-unit">(L/min)</span><br>
+                    <span class="control-label">Aerosol Flow Rate (L/min)</span>
                     <input class="textinput" id="Q_a" type="number" value="0.3" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Mass Resolution</span><br>
+                    <span class="control-label">Mass Resolution</span>
                     <input class="textinput" id="R_m" type="number" value="3" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Inner Cylinder Radius</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Inner Cylinder Radius (m)</span>
                     <input class="textinput" id="r_1" type="number" value="0.06" step="0.001">
                 </div>
                 <div class="control">
-                    <span class="control-label">Outer Cylinder Radius</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Outer Cylinder Radius (m)</span>
                     <input class="textinput" id="r_2" type="number" value="0.061" step="0.001">
                 </div>
                 <div class="control">
-                    <span class="control-label">Length of Classifier</span>
-                    <span class="control-unit">(m)</span><br>
+                    <span class="control-label">Length of Classifier (m)</span>
                     <input class="textinput" id="L" type="number" value="0.2" step="0.01">
                 </div>
                 <div class="control">
-                    <span class="control-label">Lower Voltage Limit</span>
-                    <span class="control-unit">(V)</span><br>
+                    <span class="control-label">Lower Voltage Limit (V)</span>
                     <input class="textinput" id="V_min" type="number" value="0.1" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Upper Voltage Limit</span>
-                    <span class="control-unit">(V)</span><br>
+                    <span class="control-label">Upper Voltage Limit (V)</span>
                     <input class="textinput" id="V_max" type="number" value="1000" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Lower Rotational Speed</span>
-                    <span class="control-unit">(rad/s)</span><br>
+                    <span class="control-label">Lower Rotational Speed (rad/s)</span>
                     <input class="textinput" id="w_lb" type="number" value="200" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Upper Rotational Speed</span>
-                    <span class="control-unit">(rad/s)</span><br>
+                    <span class="control-label">Upper Rotational Speed (rad/s)</span>
                     <input class="textinput" id="w_ub" type="number" value="12000" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">\( \rho_{\text{eff},100} \)</span>
-                    <span class="control-unit">(kg/m³)</span><br>
+                    <span class="control-label">\( \rho_{\text{eff},100} \) (kg/m³)</span>
                     <input class="textinput" id="rho100" type="number" value="1000" step="1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Mass-Mobility Exponent</span><br>
+                    <span class="control-label">Mass-Mobility Exponent</span>
                     <input class="textinput" id="Dm" type="number" value="3" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Temperature</span>
-                    <span class="control-unit">(K)</span><br>
+                    <span class="control-label">Temperature (K)</span>
                     <input class="textinput" id="T" type="number" value="298.15" step="0.1">
                 </div>
                 <div class="control">
-                    <span class="control-label">Pressure</span>
-                    <span class="control-unit">(Pa)</span><br>
+                    <span class="control-label">Pressure (Pa)</span>
                     <input class="textinput" id="P" type="number" value="101325" step="1">
                 </div>
                 <!-- Classifier model selector -->
                 <div class="control" id="select-div">
-                    <span class="control-label">CPMA Model</span><br>
+                    <span class="control-label">CPMA Model</span>
                     <select class="textinput" id="CPMA-model">
                         <option value="non">None</option>
                         <option value="Mk1">Mk1</option>
                         <option value="Mk2">Mk2</option>
-                    </select><br>
+                    </select>
                 </div>
                 <!-- Y-axis mode selector -->
                 <div class="control" id="select-div">
-                    <span class="control-label">y-axis mode</span><br>
+                    <span class="control-label">y-axis mode</span>
                     <select class="textinput" id="yaxis-mode">
                         <option value="mass">Mass (fg)</option>
                         <option value="diameter">Mobility Diameter (nm)</option>
-                    </select><br>
+                    </select>
                 </div>
                 <button onclick="calculateCPMARange()">Calculate</button>
             </div>
             <div id="plot_CPMA"></div>
             <div id="diameter-results_CPMA" style="margin-top: 20px; font-family: monospace;"></div>
+        </div>
+        
+        <!-- Tandem Classifier Comparison Section -->
+        <div class="container">
+            <h1>Tandem Classifier Comparison</h1>
+            <div class="input-section">
+                <div class="control">
+                    <span class="control-label">First Classifier</span>
+                    <select class="textinput" id="tandem-classifier1">
+                        <option value="DMA">DMA</option>
+                        <option value="AAC">AAC</option>
+                        <option value="CPMA">CPMA</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <span class="control-label">Second Classifier</span>
+                    <select class="textinput" id="tandem-classifier2">
+                        <option value="AAC">AAC</option>
+                        <option value="DMA">DMA</option>
+                        <option value="CPMA">CPMA</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <span class="control-label">Plot Mode</span>
+                    <select class="textinput" id="tandem-plot-mode">
+                        <option value="overlay">Overlay Plots</option>
+                        <option value="side-by-side">Side by Side</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <span class="control-label">ρ₁₀₀ (kg/m³)</span>
+                    <input class="textinput" id="tandem-rho100" type="number" value="1000" step="1">
+                </div>
+                <div class="control">
+                    <span class="control-label">Mass-Mobility Exponent (Dm)</span>
+                    <input class="textinput" id="tandem-Dm" type="number" value="3" step="0.1">
+                </div>
+                <button onclick="calculateTandemComparison()">Compare Classifiers</button>
+            </div>
+            <div id="plot_tandem"></div>
+            <div id="tandem-results" style="margin-top: 20px; font-family: monospace;"></div>
         </div>        
     </div>
     <script src="script.js"></script>

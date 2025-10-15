@@ -1,6 +1,52 @@
 // Constants
 const e = 1.6e-19;
 
+// Global data storage for tandem comparison
+let globalClassifierData = {
+    DMA: null,
+    AAC: null,
+    CPMA: null
+};
+
+// Function to convert aerodynamic diameter to mobility diameter for AAC
+function da_rhoeff2dm(da, rho100, Dm, P, T) {
+    // Convert aerodynamic diameter and effective density to mobility diameter
+
+    const rho0 = 1e3; // Density of water [kg/m^3]
+    const k = Math.PI / 6 * rho100 * Math.pow(100 * 1e-9, 3 - Dm);
+
+    // Initial guess: direct method (no iteration)
+    let dm_in = da * Math.sqrt(rho0 / rho100);
+
+    // Iterative function for root-finding
+    function fun_iter(dm) {
+        return  (
+            dm  * Math.sqrt(
+                (6 * k / Math.PI * Math.pow(dm, Dm - 3) / rho0) *
+                (Cc(dm, P, T) / Cc(da, P, T))
+            ) - da
+        );
+    }
+
+    function solve(func, x0, tol = 1e-9, maxIter = 100) {
+        let x = x0;
+        for (let i = 0; i < maxIter; i++) {
+            const fx = func(x);
+            const h = 1e-8;
+            const dfx = (func(x + h) - func(x - h)) / (2 * h); // derivative approx
+            if (Math.abs(dfx) < 1e-12) break;
+            const xNew = x - fx / dfx;
+            if (Math.abs(xNew - x) < tol) return xNew;
+            x = xNew;
+        }
+        return x;
+    }
+
+    let dm = solve(fun_iter, dm_in ) ;
+
+    return dm; 
+}
+
 // Cunningham slip correction factor
 function Cc(d, P, T) {
     const la = 67.3e-9; // mfp at 101325 Pa and 296.15 K
@@ -479,11 +525,33 @@ function calculateCPMARange() {
             .then(() => console.log('Plot created successfully'))
             .catch(err => console.error('Error creating plot:', err));
 
-    } catch (error) {
-        console.error('Error in calculateCPMARange:', error);
-        alert('An error occurred while calculating the CPMA range. Please check the console for details.');
-    }
-}
+        // Store data for tandem comparison
+        let x_data;
+        if (x_label === 'Mass [fg]') {
+            x_data = x_vals.map(m => Math.pow((m * 1e-18) / k, 1 / Dm)* 1e9);
+        } else {
+            x_data = x_vals; // Already in correct units
+        }
+
+        globalClassifierData.CPMA = {
+            type: 'CPMA',
+            xLabel: 'Mobility diameter, Dₘ [nm]',
+            x: x_data,
+            y_min: R_m_1, // Lower boundary
+            y_max: R_m_2, // Upper boundary
+            yLabel: 'Rₘ',
+            color: 'green',
+            name: 'CPMA',
+            d_i: parseFloat(d_i_label), // Store inner diameter
+            d_o: parseFloat(d_o_label), // Store outer diameter
+            Dm: Dm, // Store mass-mobility exponent for tandem plotting
+            isCPMA: true // Flag to identify CPMA in tandem plotting
+        };
+            } catch (error) {
+                console.error('Error in calculateCPMARange:', error);
+                alert('An error occurred while calculating the CPMA range. Please check the console for details.');
+            }
+        }
 
 function calculateDMARange() {
     try {
@@ -689,9 +757,23 @@ function calculateDMARange() {
             .then(() => console.log('Plot created successfully'))
             .catch(err => console.error('Error creating plot:', err));
 
+        // Store data for tandem comparison
+        globalClassifierData.DMA = {
+            type: 'DMA',
+            x_min: d_min_DMA.map(d => d * 1e9), // Convert to nm
+            x_max: d_max_DMA.map(d => d * 1e9), // Convert to nm
+            y: R_B,
+            xLabel: 'Mobility diameter, Dₘ [nm]',
+            yLabel: 'Rₘ',
+            color: 'blue',
+            name: 'DMA',
+            R_lb: R_B_lb, 
+            R_ub: R_B_ub  
+        };
+
     } catch (error) {
-        console.error('Error in calculateCPMARange:', error);
-        alert('An error occurred while calculating the CPMA range. Please check the console for details.');
+        console.error('Error in calculateDMARange:', error);
+        alert('An error occurred while calculating the DMA range. Please check the console for details.');
     }
 
 }
@@ -897,9 +979,33 @@ function calculateAACRange() {
             .then(() => console.log('Plot created successfully'))
             .catch(err => console.error('Error creating plot:', err));
 
+        // Get current CPMA values for defaults
+        const cpmRho100 = parseFloat(document.getElementById('rho100').value);
+        const cpmDm = parseFloat(document.getElementById('Dm').value);
+        
+        // Store data for tandem comparison
+        globalClassifierData.AAC = {
+            type: 'AAC',
+            x_min: d_min_AAC.map(d => d * 1e9), // Convert to nm
+            x_max: d_max_AAC.map(d => d * 1e9), // Convert to nm
+            y: R_t,
+            xLabel: 'Aerodynamic diameter, Dₐ [nm]',
+            yLabel: 'Rτ',
+            color: 'red',
+            name: 'AAC',
+            R_lb: R_t_lb, 
+            R_ub: R_t_ub,
+            isAAC: true, // Flag to identify AAC in tandem plotting
+            // Store parameters needed for da to dm conversion
+            rho100: cpmRho100, // Use CPMA effective density as default
+            Dm: cpmDm, // Use CPMA mass-mobility exponent as default
+            P: P, // Pressure
+            T: T  // Temperature
+        };
+
     } catch (error) {
-        console.error('Error in calculateCPMARange:', error);
-        alert('An error occurred while calculating the CPMA range. Please check the console for details.');
+        console.error('Error in calculateAACRange:', error);
+        alert('An error occurred while calculating the AAC range. Please check the console for details.');
     }
 
 }
@@ -1041,3 +1147,849 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listen for changes
         CPMAModel.addEventListener("change", updateInputs);
     });
+
+// Sync tandem parameters with CPMA section
+document.addEventListener('DOMContentLoaded', () => {
+    const tandemRho100 = document.getElementById('tandem-rho100');
+    const tandemDm = document.getElementById('tandem-Dm');
+    const cpmRho100 = document.getElementById('rho100');
+    const cpmDm = document.getElementById('Dm');
+
+    const classifier1Select = document.getElementById('tandem-classifier1');
+    const classifier2Select = document.getElementById('tandem-classifier2');
+
+    // Function to sync tandem values with CPMA values
+    function syncTandemValues() {
+        // Check if either classifier is CPMA
+        const classifier1 = classifier1Select.value;
+        const classifier2 = classifier2Select.value;
+
+        if (classifier1 === "CPMA" || classifier2 === "CPMA") {
+            // Disable user editing
+            tandemRho100.disabled = true;
+            tandemDm.disabled = true;
+
+            // Sync CPMA values
+            if (cpmRho100) tandemRho100.value = cpmRho100.value;
+            if (cpmDm) tandemDm.value = cpmDm.value;
+        } else {
+            // Re-enable if CPMA not involved
+            tandemRho100.disabled = false;
+            tandemDm.disabled = false;
+        }
+    }
+
+    // Sync when CPMA values change
+    if (cpmRho100) {
+        cpmRho100.addEventListener('input', syncTandemValues);
+    }
+    if (cpmDm) {
+        cpmDm.addEventListener('input', syncTandemValues);
+    }
+    if (classifier1Select) {
+        classifier1Select.addEventListener('change', syncTandemValues);
+    }
+    if (classifier2Select) {
+        classifier2Select.addEventListener('change', syncTandemValues);
+    }
+
+    // Initial sync
+    syncTandemValues();
+});
+
+// Tandem Classifier Comparison Functions
+function calculateTandemComparison() {
+    try {
+        const classifier1 = document.getElementById('tandem-classifier1').value;
+        const classifier2 = document.getElementById('tandem-classifier2').value;
+        const plotMode = document.getElementById('tandem-plot-mode').value;
+        
+        // Get tandem parameters
+        const tandemRho100 = parseFloat(document.getElementById('tandem-rho100').value);
+        const tandemDm = parseFloat(document.getElementById('tandem-Dm').value);
+        
+        if (classifier1 === classifier2) {
+            alert('Please select two different classifiers for comparison.');
+            return;
+        }
+        
+        // Get data for both classifiers
+        let data1 = getClassifierData(classifier1);
+        let data2 = getClassifierData(classifier2);
+        
+        if (!data1) {
+            alert(`Error: No data available for ${classifier1}. Please calculate ${classifier1} first.`);
+            return;
+        }
+        
+        if (!data2) {
+            alert(`Error: No data available for ${classifier2}. Please calculate ${classifier2} first.`);
+            return;
+        }
+        
+        // Check if data arrays are empty
+        const data1Valid = (data1.x_min && data1.x_min.length > 0) || (data1.x && data1.x.length > 0);
+        const data2Valid = (data2.x_min && data2.x_min.length > 0) || (data2.x && data2.x.length > 0);
+        
+        if (!data1Valid) {
+            alert(`Error: ${classifier1} data is empty. Please recalculate ${classifier1}.`);
+            return;
+        }
+        
+        if (!data2Valid) {
+            alert(`Error: ${classifier2} data is empty. Please recalculate ${classifier2}.`);
+            return;
+        }
+        
+        // Update AAC data with tandem parameters if needed
+        if (data1.isAAC) {
+            data1 = { ...data1, rho100: tandemRho100, Dm: tandemDm };
+        }
+        if (data2.isAAC) {
+            data2 = { ...data2, rho100: tandemRho100, Dm: tandemDm };
+        }
+        
+        // Create comparison plot
+        createTandemPlot(data1, data2, classifier1, classifier2, plotMode);
+        
+        // Display results
+        displayTandemResults(data1, data2, classifier1, classifier2);
+        
+    } catch (error) {
+        console.error('Error in calculateTandemComparison:', error);
+        alert('An error occurred while comparing classifiers. Please check the console for details.');
+    }
+}
+
+function getClassifierData(classifierType) {
+    // Return stored data if available, otherwise return null
+    return globalClassifierData[classifierType];
+}
+
+function createTandemPlot(data1, data2, classifier1, classifier2, plotMode) {
+    // Clear previous plot
+    const plotDiv = document.getElementById('plot_tandem');
+    plotDiv.innerHTML = '';
+    
+    if (plotMode === 'overlay') {
+        createOverlayPlot(data1, data2, classifier1, classifier2);
+    } else {
+        createSideBySidePlot(data1, data2, classifier1, classifier2);
+    }
+}
+
+function createOverlayPlot(data1, data2, classifier1, classifier2) {
+    const traces = [];
+    
+    // Add traces for first classifier (both boundaries)
+    if (data1.x_min && data1.x_min.length > 0) {
+        // DMA/AAC case: x_min and x_max with same y values
+        if (data1.isAAC) {
+            // For AAC in tandem: convert da to dm
+            const x_min_dm = data1.x_min.map(da => da_rhoeff2dm(da * 1e-9, data1.rho100, data1.Dm, data1.P, data1.T) * 1e9);
+            const x_max_dm = data1.x_max.map(da => da_rhoeff2dm(da * 1e-9, data1.rho100, data1.Dm, data1.P, data1.T) * 1e9);
+            
+            traces.push({
+                x: x_min_dm,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: true
+            });
+            traces.push({
+                x: x_max_dm,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[0], x_max_dm[0]],
+                y: [data1.R_lb, data1.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[x_min_dm.length-1], x_max_dm[x_min_dm.length-1]],
+                y: [data1.R_ub, data1.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+        } else {
+            // Regular DMA case
+            traces.push({
+                x: data1.x_min,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x_max,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data1.x_min[0], data1.x_max[0]],
+                y: [data1.R_lb, data1.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data1.x_min[data1.x_min.length-1], data1.x_max[data1.x_min.length-1]],
+                y: [data1.R_ub, data1.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+        }
+    } else if (data1.x && data1.x.length > 0) {
+        // CPMA case: same x values with y_min and y_max
+        if (data1.isCPMA) {
+            // For CPMA in tandem: use Dm * R_m on y-axis
+            traces.push({
+                x: data1.x,
+                y: data1.y_min.map(rm => data1.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x,
+                y: data1.y_max.map(rm => data1.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+        } else {
+            // Regular case for other classifiers
+            traces.push({
+                x: data1.x,
+                y: data1.y_min,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x,
+                y: data1.y_max,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name}`,
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data1.x_min[0], data1.x_max[0]],
+                y: [data1.R_lb, data1.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data1.x_min[data1.x_min.length-1], data1.x_max[data1.x_min.length-1]],
+                y: [data1.R_ub, data1.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data1.color, dash: 'solid' },
+                showlegend: false
+            });
+        }
+    }
+    
+    // Add traces for second classifier (both boundaries)
+    if (data2.x_min && data2.x_min.length > 0) {
+        // DMA/AAC case: x_min and x_max with same y values
+        if (data2.isAAC) {
+            // For AAC in tandem: convert da to dm
+            const x_min_dm = data2.x_min.map(da => da_rhoeff2dm(da * 1e-9, data2.rho100, data2.Dm, data2.P, data2.T) * 1e9);
+            const x_max_dm = data2.x_max.map(da => da_rhoeff2dm(da * 1e-9, data2.rho100, data2.Dm, data2.P, data2.T) * 1e9);
+            
+            traces.push({
+                x: x_min_dm,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: true
+            });
+            traces.push({
+                x: x_max_dm,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[0], x_max_dm[0]],
+                y: [data2.R_lb, data2.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[x_min_dm.length-1], x_max_dm[x_min_dm.length-1]],
+                y: [data2.R_ub, data2.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+        } else {
+            // Regular DMA case
+            traces.push({
+                x: data2.x_min,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x_max,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data2.x_min[0], data2.x_max[0]],
+                y: [data2.R_lb, data2.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data2.x_min[data2.x_min.length-1], data2.x_max[data2.x_min.length-1]],
+                y: [data2.R_ub, data2.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+        }
+    } else if (data2.x && data2.x.length > 0) {
+        // CPMA case: same x values with y_min and y_max
+        if (data2.isCPMA) {
+            // For CPMA in tandem: use Dm * R_m on y-axis
+            traces.push({
+                x: data2.x,
+                y: data2.y_min.map(rm => data2.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x,
+                y: data2.y_max.map(rm => data2.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+        } else {
+            // Regular case for other classifiers
+            traces.push({
+                x: data2.x,
+                y: data2.y_min,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x,
+                y: data2.y_max,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name}`,
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data2.x_min[0], data2.x_max[0]],
+                y: [data2.R_lb, data2.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+            traces.push({
+                x: [data2.x_min[data2.x_min.length-1], data2.x_max[data2.x_min.length-1]],
+                y: [data2.R_ub, data2.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: data2.color, dash: 'dash' },
+                showlegend: false
+            });
+        }
+    }
+    
+    // Determine axis labels based on which classifiers are involved
+    let yAxisLabel = 'Resolution Parameter';
+    let xAxisLabel = 'Mobility diameter, Dₘ [nm]';
+    
+    if (data1.isCPMA || data2.isCPMA) {
+        yAxisLabel = 'Dm × Rₘ';
+    }
+    
+    // If AAC is involved, x-axis should be mobility diameter
+    if (data1.isAAC || data2.isAAC) {
+        xAxisLabel = 'Mobility diameter, Dₘ [nm]';
+    }
+    
+    const layout = {
+        title: `Tandem ${classifier1} -- ${classifier2}`,
+        xaxis: {
+            title: {
+                text: xAxisLabel,
+                font: { size: 18 },
+                standoff: 15
+            },
+            type: 'log'
+        },
+        yaxis: {
+            title: {
+                text: yAxisLabel,
+                font: { size: 18 },
+                standoff: 15
+            },
+            type: 'log'
+        },
+        grid: {
+            rows: 1,
+            columns: 1,
+            pattern: 'independent'
+        }
+    };
+    
+    Plotly.newPlot('plot_tandem', traces, layout)
+        .then(() => console.log('Tandem overlay plot created successfully'))
+        .catch(err => console.error('Error creating tandem plot:', err));
+}
+
+function createSideBySidePlot(data1, data2, classifier1, classifier2) {
+    const traces = [];
+    
+    // First classifier (left subplot) - both boundaries
+    if (data1.x_min && data1.x_min.length > 0) {
+        // DMA/AAC case: x_min and x_max with same y values
+        if (data1.isAAC) {
+            // For AAC in tandem: convert da to dm
+            const x_min_dm = data1.x_min.map(da => da_rhoeff2dm(da * 1e-9, data1.rho100, data1.Dm, data1.P, data1.T) * 1e9);
+            const x_max_dm = data1.x_max.map(da => da_rhoeff2dm(da * 1e-9, data1.rho100, data1.Dm, data1.P, data1.T) * 1e9);
+            
+            traces.push({
+                x: x_min_dm,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (min)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+            traces.push({
+                x: x_max_dm,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[0], x_max_dm[0]],
+                y: [data1.R_lb, data1.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[x_min_dm.length-1], x_max_dm[x_min_dm.length-1]],
+                y: [data1.R_ub, data1.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: false
+            }); 
+        } else {
+            // Regular DMA case
+            traces.push({
+                x: data1.x_min,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (min)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x_max,
+                y: data1.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+        }
+    } else if (data1.x && data1.x.length > 0) {
+        // CPMA case: same x values with y_min and y_max
+        if (data1.isCPMA) {
+            // For CPMA in tandem: use Dm * R_m on y-axis
+            traces.push({
+                x: data1.x,
+                y: data1.y_min.map(rm => data1.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (min)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x,
+                y: data1.y_max.map(rm => data1.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+        } else {
+            // Regular case for other classifiers
+            traces.push({
+                x: data1.x,
+                y: data1.y_min,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (min)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+            traces.push({
+                x: data1.x,
+                y: data1.y_max,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data1.name} (max)`,
+                line: { color: data1.color, dash: 'solid' },
+                xaxis: 'x1',
+                yaxis: 'y1',
+                showlegend: true
+            });
+        }
+    }
+    
+    // Second classifier (right subplot) - both boundaries
+    if (data2.x_min && data2.x_min.length > 0) {
+        // DMA/AAC case: x_min and x_max with same y values
+        if (data2.isAAC) {
+            // For AAC in tandem: convert da to dm
+            const x_min_dm = data2.x_min.map(da => da_rhoeff2dm(da * 1e-9, data2.rho100, data2.Dm, data2.P, data2.T) * 1e9);
+            const x_max_dm = data2.x_max.map(da => da_rhoeff2dm(da * 1e-9, data2.rho100, data2.Dm, data2.P, data2.T) * 1e9);
+            
+            traces.push({
+                x: x_min_dm,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (min)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+            traces.push({
+                x: x_max_dm,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+            traces.push({
+                x: [x_min_dm[0], x_max_dm[0]],
+                y: [data2.R_lb, data2.R_lb],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'solid' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: false
+            });
+            traces.push({
+                x: [x_min_dm[x_min_dm.length-1], x_max_dm[x_min_dm.length-1]],
+                y: [data2.R_ub, data2.R_ub],
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'solid' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: false
+            });
+        } else {
+            // Regular DMA case
+            traces.push({
+                x: data2.x_min,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (min)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x_max,
+                y: data2.y,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+        }
+    } else if (data2.x && data2.x.length > 0) {
+        // CPMA case: same x values with y_min and y_max
+        if (data2.isCPMA) {
+            // For CPMA in tandem: use Dm * R_m on y-axis
+            traces.push({
+                x: data2.x,
+                y: data2.y_min.map(rm => data2.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (min)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x,
+                y: data2.y_max.map(rm => data2.Dm * rm),
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+        } else {
+            // Regular case for other classifiers
+            traces.push({
+                x: data2.x,
+                y: data2.y_min,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (min)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+            traces.push({
+                x: data2.x,
+                y: data2.y_max,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data2.name} (max)`,
+                line: { color: data2.color, dash: 'dash' },
+                xaxis: 'x2',
+                yaxis: 'y2',
+                showlegend: true
+            });
+        }
+    }
+    
+    // Determine axis labels based on which classifiers are involved
+    let y1Label = data1.yLabel;
+    let y2Label = data2.yLabel;
+    let x1Label = data1.xLabel;
+    let x2Label = data2.xLabel;
+    
+    if (data1.isCPMA) {
+        y1Label = 'Dm × Rₘ';
+    }
+    if (data2.isCPMA) {
+        y2Label = 'Dm × Rₘ';
+    }
+    
+    // If AAC is involved, x-axis should be mobility diameter
+    if (data1.isAAC) {
+        x1Label = 'Mobility diameter, Dₘ [nm]';
+    }
+    if (data2.isAAC) {
+        x2Label = 'Mobility diameter, Dₘ [nm]';
+    }
+    
+    const layout = {
+        title: `Tandem ${classifier1} -- ${classifier2}`,
+        xaxis: {
+            title: {
+                text: x1Label,
+                font: { size: 16 }
+            },
+            type: 'log',
+            domain: [0, 0.45]
+        },
+        yaxis: {
+            title: {
+                text: y1Label,
+                font: { size: 16 }
+            },
+            type: 'log'
+        },
+        xaxis2: {
+            title: {
+                text: x2Label,
+                font: { size: 16 }
+            },
+            type: 'log',
+            domain: [0.55, 1]
+        },
+        yaxis2: {
+            title: {
+                text: y2Label, 
+                font: { size: 16 }
+            },
+            type: 'log',
+            anchor: 'x2'
+        },
+        grid: {
+            rows: 1,
+            columns: 2,
+            pattern: 'independent'
+        }
+    };
+    
+    Plotly.newPlot('plot_tandem', traces, layout)
+        .then(() => console.log('Tandem side-by-side plot created successfully'))
+        .catch(err => console.error('Error creating tandem plot:', err));
+}
+
+function displayTandemResults(data1, data2, classifier1, classifier2) {
+    const resultsDiv = document.getElementById('tandem-results');
+    
+    let html = `<strong>Comparison Results:</strong><br><br>`;
+    
+    // First classifier results
+    html += `<strong>${classifier1}:</strong><br>`;
+    
+    // Show correct x-axis label
+    const x1Label = data1.isAAC ? 'Mobility diameter, Dₘ [nm]' : data1.xLabel;
+    html += `- X-axis: ${x1Label}<br>`;
+    
+    // Show correct y-axis label for CPMA
+    const y1Label = data1.isCPMA ? 'Dm × Rₘ' : data1.yLabel;
+    html += `- Y-axis: ${y1Label}<br>`;
+    
+    
+    // Show Dm value for CPMA
+    if (data1.isCPMA && data1.Dm !== undefined) {
+        html += `- Mass-Mobility Exponent (Dm): ${data1.Dm}<br>`;
+    }
+    
+    // Show conversion info for AAC
+    if (data1.isAAC) {
+        html += `- Converted from aerodynamic to mobility diameter<br>`;
+        html += `- Effective density (ρ₁₀₀): ${data1.rho100} kg/m³<br>`;
+        html += `- Mass-Mobility Exponent (Dm): ${data1.Dm}<br>`;
+    }
+    html += `<br>`;
+    
+    // Second classifier results
+    html += `<strong>${classifier2}:</strong><br>`;
+    
+    // Show correct x-axis label
+    const x2Label = data2.isAAC ? 'Mobility diameter, Dₘ [nm]' : data2.xLabel;
+    html += `- X-axis: ${x2Label}<br>`;
+    
+    // Show correct y-axis label for CPMA
+    const y2Label = data2.isCPMA ? 'Dm × Rₘ' : data2.yLabel;
+    html += `- Y-axis: ${y2Label}<br>`;
+    
+    
+    // Show Dm value for CPMA
+    if (data2.isCPMA && data2.Dm !== undefined) {
+        html += `- Mass-Mobility Exponent (Dm): ${data2.Dm}<br>`;
+    }
+    
+    // Show conversion info for AAC
+    if (data2.isAAC) {
+        html += `- Converted from aerodynamic to mobility diameter<br>`;
+        html += `- Effective density (ρ₁₀₀): ${data2.rho100} kg/m³<br>`;
+        html += `- Mass-Mobility Exponent (Dm): ${data2.Dm}<br>`;
+    }
+    
+    resultsDiv.innerHTML = html;
+}
