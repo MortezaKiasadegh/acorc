@@ -107,5 +107,5 @@ Each function returns:
 
 This project is licensed under the MIT License - see the LICENSE file for details. 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17364008.svg)](https://doi.org/10.5281/zenodo.17364008)
+
 
